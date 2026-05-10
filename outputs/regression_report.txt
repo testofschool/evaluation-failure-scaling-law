@@ -1,0 +1,30 @@
+============================================================
+STATISTICAL ANALYSIS: Evaluation Failure Surface
+Grid: 15×10=150 cells, 15 seeds/cell
+============================================================
+
+--- BIASED: error = γ0 + γ1·S_c + γ2·D_c + γ3·S_c·D_c ---
+  γ0(intercept)       : +0.06155 ± 0.00472  (t=+13.04)
+  γ1(S_c)             : +0.28142 ± 0.02186  (t=+12.88)
+  γ2(D_c)             : +0.04329 ± 0.00329  (t=+13.17)
+  γ3(S_c×D_c)         : +0.19857 ± 0.01522  (t=+13.05)
+  R² = 0.7772, n = 150
+  Interpretation: γ3 IS significant (|t|=13.0)
+
+--- MCAR: error = γ0 + γ1·S_c + γ2·D_c + γ3·S_c·D_c ---
+  γ0(intercept)       : +0.03139 ± 0.00127  (t=+24.76)
+  γ1(S_c)             : +0.12683 ± 0.00587  (t=+21.61)
+  γ2(D_c)             : +0.01633 ± 0.00088  (t=+18.49)
+  γ3(S_c×D_c)         : +0.06330 ± 0.00409  (t=+15.49)
+  R² = 0.8778, n = 150
+
+--- POWER-LAW: error = α·(S·D)^β ---
+  α=0.0262, β=1.8334, R²=0.5870
+  → Weak fit. Use failure surface phrasing.
+
+--- KEY RESULTS ---
+At S≥0.40: mean error(biased)=0.118, mean error(MCAR)=0.057
+  → Biased missingness adds 0.061 extra error
+Worst case: error(biased)=0.758, error(MCAR)=0.230
+IRT range: min ρ=0.993, max ρ=1.000
+IRT maintains ρ ≥ 0.993 across ALL 150 conditions

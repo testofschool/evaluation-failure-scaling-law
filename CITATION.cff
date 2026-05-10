@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+title: "The Scaling Law of Evaluation Failure"
+authors:
+  - family-names: "Kang"
+    given-names: "Jung Min"
+    email: "gangjeongmin23@gmail.com"
+type: article
+date-released: 2026-05-11
+url: "https://github.com/testofschool/evaluation-failure-scaling-law"
+repository-code: "https://github.com/testofschool/evaluation-failure-scaling-law"
+license: "CC-BY-4.0"
+keywords:
+  - item response theory
+  - benchmark evaluation
+  - simple averaging
+  - data sparsity
+  - Physical AI
+  - evaluation methodology
