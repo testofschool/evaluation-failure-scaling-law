@@ -4,8 +4,10 @@
 
 Jung Min Kang · Independent Researcher · Seoul, South Korea
 
-[![arXiv](https://img.shields.io/badge/arXiv-2605.xxxxx-b31b1b.svg)](https://arxiv.org/abs/2605.xxxxx)
+![arXiv](https://img.shields.io/badge/arXiv-submitted-b31b1b.svg)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+
+Submitted to arXiv as submission `7580579`.
 
 ---
 
@@ -55,12 +57,11 @@ pip install numpy scipy matplotlib
 python src/grid_sweep_final.py
 ```
 
-This generates:
+This regenerates the experiment outputs and analysis figures:
 - `outputs/grid_summary.csv` — per-cell mean/std
 - `outputs/grid_raw_runs.csv` — per-seed raw results
 - `outputs/regression_report.txt` — statistical analysis
 - `figures/figure2_composite.png` — paper Figure 2
-- `figures/scaling_fit.png` — S×D scatter plot
 
 ### Increase Seeds for Paper-Grade Results
 
@@ -79,14 +80,14 @@ evaluation-failure-scaling-law/
 ├── CITATION.cff
 ├── requirements.txt
 ├── paper/
-│   ├── paper_FINAL.pdf
-│   └── paper_FINAL.tex
+│   ├── Kang_2026_EFSL_FINAL.pdf
+│   ├── main.tex
+│   └── figures/
+│       └── figure2_composite.png
 ├── src/
 │   └── grid_sweep_final.py
 ├── figures/
-│   ├── figure2_composite.png
-│   ├── figure2_composite_annotated.png
-│   └── scaling_fit.png
+│   └── figure2_composite.png
 └── outputs/
     ├── grid_summary.csv
     ├── grid_raw_runs.csv

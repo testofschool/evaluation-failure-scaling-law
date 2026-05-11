@@ -1,10 +1,12 @@
+\pdfoutput=1
 \documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage[margin=1in]{geometry}
 \usepackage{natbib}
 \usepackage{enumitem}
@@ -64,7 +66,7 @@ This law has immediate practical implications. In Physical AI (robotics) benchma
 
 \textbf{Critiques of averaging in benchmarks.} The limitations of simple averaging have been discussed from multiple angles. \citet{uzunoglu2025} introduced benchmark HARMONY, measuring performance uniformity across subdomains, and showed that less harmonious benchmarks produce misleading results. However, their proposed solution (reporting harmony alongside accuracy) does not address the ranking problem---it diagnoses but does not cure. The flaw of averages concept from decision science~\cite{savage2009} provides theoretical grounding: when the relationship between inputs and outputs is nonlinear (as with item difficulty), plans based on averages fail on average.
 
-\textbf{IRT beyond NLP.} Outside AI evaluation, IRT has been applied to motor carrier safety assessment by the U.S. Federal Motor Carrier Safety Administration (FMCSA), which conducted a multi-year study comparing IRT to their existing Safety Measurement Systems~\cite{fmcsa2021}. \citet{singhal2025} applied IRT to medical LLM benchmarks, demonstrating that IRT-based rankings outperform accuracy-based rankings across six external medical benchmarks. \citet{truong2025} proposed amortized model-based evaluation using IRT with learned difficulty predictors. Concurrently, recent work on efficient agent benchmarking~\cite{agentbench2026} proposed evaluating AI agents on mid-difficulty task subsets (30--70\% pass rate) motivated by IRT, reducing evaluation cost by 44--70\%. Their approach selects \emph{which} tasks to evaluate; our approach corrects rankings when task selection is not under the evaluator's control---a complementary but fundamentally different problem. To our knowledge, no prior work has systematically compared IRT performance against simple averaging across multiple domains as a function of data sparsity and difficulty heterogeneity.
+\textbf{IRT beyond NLP.} Outside AI evaluation, IRT has been applied to motor carrier safety assessment by the U.S. Federal Motor Carrier Safety Administration (FMCSA), which conducted a multi-year study comparing IRT to their existing Safety Measurement Systems~\cite{fmcsa2021}. \citet{luo2025medirt} introduced MedIRT for item-aware evaluation across medical benchmarks, demonstrating that IRT-based rankings outperform accuracy-based rankings across six external medical benchmarks. \citet{truong2025} proposed amortized model-based evaluation using IRT with learned difficulty predictors. Concurrently, recent work on efficient agent benchmarking~\cite{agentbench2026} proposed evaluating AI agents on mid-difficulty task subsets (30--70\% pass rate) motivated by IRT, reducing evaluation cost by 44--70\%. Their approach selects \emph{which} tasks to evaluate; our approach corrects rankings when task selection is not under the evaluator's control---a complementary but fundamentally different problem. To our knowledge, no prior work has systematically compared IRT performance against simple averaging across multiple domains as a function of data sparsity and difficulty heterogeneity.
 
 \textbf{Physical AI benchmarking.} The Physical AI benchmark landscape is characterized by extreme fragmentation. \citet{liu2023libero} introduced LIBERO, now the de facto standard for vision-language-action (VLA) model evaluation. \citet{zhou2025b} extended this with LIBERO-PRO, revealing that models achieving $>$90\% accuracy under standard evaluation collapse to 0\% under perturbation. \citet{fei2025} further extended robustness analysis across seven perturbation axes. Despite this progress, no widely adopted unified aggregation methodology exists: each paper reports results on different subsets of models and tasks, creating a sparse evaluation matrix that renders cross-paper comparison via simple averaging fundamentally unreliable.
 
@@ -349,7 +351,7 @@ The path forward involves two steps: reporting IRT-based rankings alongside simp
 %% ============================================================
 \section*{Reproducibility Statement}
 
-All experiments use synthetic data with fixed random seeds for exact reproducibility. The complete Python implementation---including data generation, IRT estimation, grid sweep, and evaluation---is available at \url{https://github.com/testofschool/evaluation-failure-scaling-law}. The codebase requires only NumPy and SciPy (no deep learning frameworks). Each experiment runs in under 60 seconds on a standard laptop CPU. The 150-condition grid sweep completes in approximately 3 minutes. We report all hyperparameters in Section~4 and provide the exact ground-truth parameter values in the supplementary material.
+All experiments use synthetic data with fixed random seeds for exact reproducibility. The complete Python implementation---including data generation, IRT estimation, grid sweep, and evaluation---is available at \url{https://github.com/testofschool/evaluation-failure-scaling-law}. The codebase requires only NumPy and SciPy (no deep learning frameworks). Each experiment runs in under 60 seconds on a standard laptop CPU. The 150-condition grid sweep completes in approximately 3 minutes. We report all hyperparameters in Section~4 and provide the exact ground-truth item parameters in the Appendix; complete subject ability parameters are included in the code repository.
 
 %% ============================================================
 \bibliographystyle{plainnat}
@@ -400,7 +402,7 @@ All experiments use synthetic data with fixed random seeds for exact reproducibi
 
 \bibitem[Savage(2009)]{savage2009} Savage, S.~L. \emph{The Flaw of Averages}. John Wiley \& Sons, 2009.
 
-\bibitem[Singhal et al.(2025)]{singhal2025} Singhal, K. et al. MEDIRT: Measuring competency, not performance---item-aware evaluation across medical benchmarks. \emph{arXiv preprint arXiv:2509.24186}, 2025.
+\bibitem[Luo et al.(2025)]{luo2025medirt} Luo, Z., Wu, L., Frisch, A., and He, D. Measuring Competency, Not Performance: Item-Aware Evaluation Across Medical Benchmarks. \emph{arXiv preprint arXiv:2509.24186}, 2025.
 
 \bibitem[Truong et al.(2025)]{truong2025} Truong, S. et al. Reliable and efficient amortized model-based evaluation. \emph{arXiv preprint arXiv:2503.13335}, 2025.
 
