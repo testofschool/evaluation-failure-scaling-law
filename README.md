@@ -5,6 +5,7 @@
 Jung Min Kang · Independent Researcher · Seoul, South Korea
 
 [![arXiv](https://img.shields.io/badge/arXiv-2605.11205-b31b1b.svg)](https://arxiv.org/abs/2605.11205)
+[![Try Calculator](https://img.shields.io/badge/Try_Calculator-Online-059669.svg)](https://testofschool.github.io/evaluation-failure-scaling-law)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
 ---
