@@ -4,10 +4,8 @@
 
 Jung Min Kang · Independent Researcher · Seoul, South Korea
 
-![arXiv](https://img.shields.io/badge/arXiv-submitted-b31b1b.svg)
+[![arXiv](https://img.shields.io/badge/arXiv-2605.11205-b31b1b.svg)](https://arxiv.org/abs/2605.11205)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
-
-Submitted to arXiv as submission `7580579`.
 
 ---
 
@@ -100,8 +98,9 @@ evaluation-failure-scaling-law/
 @article{kang2026evaluation,
   title={The Scaling Law of Evaluation Failure: Why Simple Averaging Collapses Under Data Sparsity and Item Difficulty Gaps, and How Item Response Theory Recovers Ground Truth Across Domains},
   author={Kang, Jung Min},
-  journal={arXiv preprint},
-  year={2026}
+  journal={arXiv preprint arXiv:2605.11205},
+  year={2026},
+  url={https://arxiv.org/abs/2605.11205}
 }
 ```
 
