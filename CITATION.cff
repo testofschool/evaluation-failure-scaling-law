@@ -1,15 +1,23 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite it as below."
-title: "The Scaling Law of Evaluation Failure"
+title: "The Scaling Law of Evaluation Failure: Why Simple Averaging Collapses Under Data Sparsity and Item Difficulty Gaps, and How Item Response Theory Recovers Ground Truth Across Domains"
 authors:
   - family-names: "Kang"
     given-names: "Jung Min"
     email: "gangjeongmin23@gmail.com"
 type: article
 date-released: 2026-05-11
-url: "https://github.com/testofschool/evaluation-failure-scaling-law"
+doi: "10.48550/arXiv.2605.11205"
+url: "https://arxiv.org/abs/2605.11205"
 repository-code: "https://github.com/testofschool/evaluation-failure-scaling-law"
 license: "CC-BY-4.0"
+identifiers:
+  - type: doi
+    value: "10.48550/arXiv.2605.11205"
+    description: "arXiv"
+  - type: doi
+    value: "10.5281/zenodo.20115827"
+    description: "Zenodo"
 keywords:
   - item response theory
   - benchmark evaluation
