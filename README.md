@@ -111,6 +111,15 @@ evaluation-failure-scaling-law/
 - [Zhou et al. (2026)](https://arxiv.org/abs/2505.15055) — PSN-IRT for LLM benchmarks
 - [Ndzomga (2026)](https://arxiv.org/abs/2603.23749) — Efficient agent benchmarking via IRT-motivated task selection
 
+## Interactive Calculator
+
+Try the Evaluation Failure Calculator in your browser — no installation required:
+
+**[→ Launch Calculator](https://testofschool.github.io/evaluation-failure-scaling-law)**
+
+Paste your own benchmark matrix to compare simple-average vs IRT rankings.
+All computation runs locally in your browser. No data is collected.
+
 ## License
 
 This work is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

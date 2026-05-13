@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evaluation Failure Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    th[data-sort] { cursor: pointer; user-select: none; }
+    th[data-sort]::after { content: "  ↕"; color: #9ca3af; font-size: 0.75rem; }
+    .scatter-label { paint-order: stroke; stroke: white; stroke-width: 4px; stroke-linejoin: round; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <header class="bg-gray-900 text-white">
+    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <p class="text-sm font-medium text-emerald-300">From: The Scaling Law of Evaluation Failure (arXiv:2605.11205)</p>
+      <h1 class="mt-3 text-3xl font-semibold tracking-normal sm:text-4xl">Evaluation Failure Calculator</h1>
+      <p class="mt-3 max-w-3xl text-base text-gray-200 sm:text-lg">Compare simple-average vs IRT rankings on your benchmark data</p>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+    <section class="rounded-lg bg-white p-5 shadow sm:p-6">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="max-w-3xl">
+          <h2 class="text-xl font-semibold">Input Matrix</h2>
+          <p class="mt-2 text-sm leading-6 text-gray-700">
+            Paste a matrix: first column = model names, first row = item/benchmark names.
+            Empty cells = missing data. Values should be scores between 0 and 1
+            (or 0-100, auto-detected).
+          </p>
+          <p class="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
+            Your data never leaves your browser. All computation runs locally. No data is sent to any server.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="loadExample" type="button" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm hover:bg-gray-50">Load Example</button>
+          <button id="runAnalysis" type="button" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">Run Analysis</button>
+          <button id="clearInput" type="button" class="rounded-md bg-gray-200 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-300">Clear</button>
+        </div>
+      </div>
+
+      <textarea id="matrixInput" class="mono mt-5 h-80 w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-4 text-sm leading-6 text-gray-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100" spellcheck="false" aria-label="Benchmark score matrix"></textarea>
+      <div id="errorBox" class="mt-4 hidden rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"></div>
+    </section>
+
+    <section id="results" class="mt-8 hidden space-y-6">
+      <div id="diagnostics" class="rounded-lg bg-white p-5 shadow sm:p-6"></div>
+
+      <div class="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <section class="rounded-lg bg-white p-5 shadow sm:p-6">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 class="text-xl font-semibold">Ranking Comparison</h2>
+              <p class="mt-1 text-sm text-gray-600">Default sort is by IRT Rank ascending. Rows with |Δ Rank| &gt; 2 are highlighted.</p>
+            </div>
+          </div>
+          <div class="mt-4 overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+              <thead class="bg-gray-100 text-left text-xs font-semibold uppercase tracking-normal text-gray-600">
+                <tr>
+                  <th class="px-3 py-3" data-sort="rank">Rank</th>
+                  <th class="px-3 py-3" data-sort="model">Model</th>
+                  <th class="px-3 py-3" data-sort="avgScore">Avg Score</th>
+                  <th class="px-3 py-3" data-sort="avgRank">Avg Rank</th>
+                  <th class="px-3 py-3" data-sort="theta">IRT θ</th>
+                  <th class="px-3 py-3" data-sort="irtRank">IRT Rank</th>
+                  <th class="px-3 py-3" data-sort="deltaRank">Δ Rank</th>
+                </tr>
+              </thead>
+              <tbody id="rankingBody" class="divide-y divide-gray-100 bg-white"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="rounded-lg bg-white p-5 shadow sm:p-6">
+          <h2 class="text-xl font-semibold">Rank Scatter</h2>
+          <p class="mt-1 text-sm text-gray-600">Average Rank vs IRT Rank. The diagonal shows agreement.</p>
+          <div id="scatterPlot" class="mt-4 overflow-x-auto"></div>
+        </section>
+      </div>
+
+      <section class="rounded-lg bg-white p-5 shadow sm:p-6">
+        <h2 class="text-xl font-semibold">Item Analysis</h2>
+        <p class="mt-1 text-sm text-gray-600">Sorted by discrimination, highest first.</p>
+        <div class="mt-4 overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-100 text-left text-xs font-semibold uppercase tracking-normal text-gray-600">
+              <tr>
+                <th class="px-3 py-3">Item</th>
+                <th class="px-3 py-3">Difficulty (b)</th>
+                <th class="px-3 py-3">Discrimination (a)</th>
+                <th class="px-3 py-3">Coverage</th>
+                <th class="px-3 py-3">Mean Score</th>
+              </tr>
+            </thead>
+            <tbody id="itemBody" class="divide-y divide-gray-100 bg-white"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="border-t border-gray-200 bg-white">
+    <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-gray-700 sm:px-6 lg:px-8">
+      <p class="font-semibold text-gray-900">Based on: The Scaling Law of Evaluation Failure</p>
+      <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+        <a class="text-emerald-700 hover:text-emerald-900" href="https://arxiv.org/abs/2605.11205" rel="noopener noreferrer">arXiv</a>
+        <a class="text-emerald-700 hover:text-emerald-900" href="https://github.com/testofschool/evaluation-failure-scaling-law" rel="noopener noreferrer">GitHub</a>
+        <span>DOI: 10.5281/zenodo.20115827</span>
+        <span>License: CC BY 4.0</span>
+      </div>
+      <p class="mt-3">By Jung Min Kang · Independent Researcher · Seoul, South Korea</p>
+      <p class="mt-2 font-medium text-gray-900">No ads · No tracking · No data collection · All computation runs in your browser</p>
+    </div>
+  </footer>
+
+  <script>
+    const EXAMPLE_DATA = `Model,NLP_Easy,NLP_Hard,Clinical_Easy,Clinical_Hard,AV_Standard,AV_Adversarial
+System_A,0.95,0.88,0.92,,0.90,
+System_B,0.93,0.85,,0.70,,0.65
+System_C,0.97,,,0.75,0.88,0.60
+System_D,0.91,0.82,0.88,0.68,,
+System_E,0.96,0.90,0.94,,,
+System_F,,0.78,,0.72,0.85,0.70
+System_G,0.94,,0.90,,0.87,
+System_H,0.92,0.86,0.89,0.71,0.86,0.62
+System_I,0.98,0.91,,,,
+System_J,0.90,0.80,0.85,0.65,0.82,0.58`;
+
+    const state = { rows: [], sortKey: "irtRank", sortDir: 1 };
+
+    function sigmoid(x) {
+      return 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, x))));
+    }
+
+    function logit(p) {
+      p = Math.max(0.001, Math.min(0.999, p));
+      return Math.log(p / (1 - p));
+    }
+
+    function parseLine(line, delimiter) {
+      const cells = [];
+      let current = "";
+      let quoted = false;
+      for (let i = 0; i < line.length; i += 1) {
+        const char = line[i];
+        const next = line[i + 1];
+        if (char === '"' && quoted && next === '"') {
+          current += '"';
+          i += 1;
+        } else if (char === '"') {
+          quoted = !quoted;
+        } else if (char === delimiter && !quoted) {
+          cells.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      cells.push(current.trim());
+      return cells;
+    }
+
+    function parseMatrix(text) {
+      const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      if (lines.length < 2) throw new Error("Paste at least one header row and one model row.");
+
+      const delimiter = lines[0].includes("\t") ? "\t" : ",";
+      const header = parseLine(lines[0], delimiter);
+      if (header.length < 3) throw new Error("The matrix needs one model-name column and at least two item columns.");
+
+      const items = header.slice(1).map((name, index) => name || `Item_${index + 1}`);
+      const models = [];
+      const rawValues = [];
+      let maxObserved = 0;
+
+      for (let r = 1; r < lines.length; r += 1) {
+        const cells = parseLine(lines[r], delimiter);
+        const model = cells[0] || `Model_${r}`;
+        const values = [];
+        for (let c = 1; c < header.length; c += 1) {
+          const raw = (cells[c] || "").trim();
+          if (raw === "") {
+            values.push(null);
+            continue;
+          }
+          const value = Number(raw);
+          if (!Number.isFinite(value)) throw new Error(`Invalid numeric value at row ${r + 1}, column ${c + 1}: ${raw}`);
+          if (value < 0) throw new Error("Scores must be non-negative.");
+          maxObserved = Math.max(maxObserved, value);
+          values.push(value);
+        }
+        models.push(model);
+        rawValues.push(values);
+      }
+
+      const scale = maxObserved > 1.5 ? 100 : 1;
+      const matrix = rawValues.map((row) => row.map((value) => {
+        if (value === null) return null;
+        const scaled = value / scale;
+        if (scaled > 1.000001) throw new Error("Scores should be between 0 and 1, or between 0 and 100.");
+        return Math.max(0, Math.min(1, scaled));
+      }));
+
+      const observed = matrix.flat().filter((value) => value !== null).length;
+      if (observed === 0) throw new Error("No scores found.");
+      models.forEach((model, index) => {
+        if (matrix[index].every((value) => value === null)) throw new Error(`${model} has no reported scores.`);
+      });
+      items.forEach((item, index) => {
+        if (matrix.every((row) => row[index] === null)) throw new Error(`${item} has no reported scores.`);
+      });
+
+      return { models, items, matrix };
+    }
+
+    function mean(values) {
+      const valid = values.filter((value) => value !== null && Number.isFinite(value));
+      return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : 0;
+    }
+
+    function rankDescending(rows, key, outKey) {
+      const sorted = [...rows].sort((a, b) => b[key] - a[key]);
+      let rank = 1;
+      for (let i = 0; i < sorted.length; i += 1) {
+        if (i > 0 && Math.abs(sorted[i][key] - sorted[i - 1][key]) > 1e-10) rank = i + 1;
+        sorted[i][outKey] = rank;
+      }
+    }
+
+    function pearson(x, y) {
+      if (x.length < 3) return 0;
+      const mx = x.reduce((sum, value) => sum + value, 0) / x.length;
+      const my = y.reduce((sum, value) => sum + value, 0) / y.length;
+      let numerator = 0;
+      let vx = 0;
+      let vy = 0;
+      for (let i = 0; i < x.length; i += 1) {
+        const dx = x[i] - mx;
+        const dy = y[i] - my;
+        numerator += dx * dy;
+        vx += dx * dx;
+        vy += dy * dy;
+      }
+      return vx > 0 && vy > 0 ? numerator / Math.sqrt(vx * vy) : 0;
+    }
+
+    function fitIRT(matrix) {
+      const nModels = matrix.length;
+      const nItems = matrix[0].length;
+      const K = 100;
+      const theta = matrix.map((row) => logit(mean(row)));
+      const b = [];
+      const a = [];
+
+      for (let j = 0; j < nItems; j += 1) {
+        const scores = matrix.map((row) => row[j]).filter((value) => value !== null);
+        b[j] = -logit(mean(scores));
+        a[j] = 1;
+      }
+
+      for (let iter = 0; iter < 50; iter += 1) {
+        for (let i = 0; i < nModels; i += 1) {
+          for (let step = 0; step < 5; step += 1) {
+            let grad = -theta[i] / 9;
+            let hess = -1 / 9;
+            for (let j = 0; j < nItems; j += 1) {
+              const y = matrix[i][j];
+              if (y === null) continue;
+              const p = sigmoid(a[j] * (theta[i] - b[j]));
+              grad += K * a[j] * (y - p);
+              hess -= K * a[j] * a[j] * p * (1 - p);
+            }
+            theta[i] = Math.max(-6, Math.min(6, theta[i] - grad / hess));
+          }
+        }
+
+        for (let j = 0; j < nItems; j += 1) {
+          for (let step = 0; step < 5; step += 1) {
+            let gradB = -b[j] / 16;
+            let hessB = -1 / 16;
+            for (let i = 0; i < nModels; i += 1) {
+              const y = matrix[i][j];
+              if (y === null) continue;
+              const p = sigmoid(a[j] * (theta[i] - b[j]));
+              gradB += K * -a[j] * (y - p);
+              hessB -= K * a[j] * a[j] * p * (1 - p);
+            }
+            b[j] = Math.max(-6, Math.min(6, b[j] - gradB / hessB));
+          }
+
+          for (let step = 0; step < 5; step += 1) {
+            let gradA = -(a[j] - 1) / 4;
+            let hessA = -1 / 4;
+            for (let i = 0; i < nModels; i += 1) {
+              const y = matrix[i][j];
+              if (y === null) continue;
+              const diff = theta[i] - b[j];
+              const p = sigmoid(a[j] * diff);
+              gradA += K * diff * (y - p);
+              hessA -= K * diff * diff * p * (1 - p);
+            }
+            a[j] = Math.max(0.25, Math.min(5, a[j] - gradA / hessA));
+          }
+        }
+
+        const center = theta.reduce((sum, value) => sum + value, 0) / theta.length;
+        for (let i = 0; i < theta.length; i += 1) theta[i] -= center;
+        for (let j = 0; j < b.length; j += 1) b[j] -= center;
+      }
+
+      return { theta, a, b };
+    }
+
+    function spearman(rows) {
+      const n = rows.length;
+      if (n < 2) return 1;
+      const sumD2 = rows.reduce((sum, row) => sum + ((row.avgRank - row.irtRank) ** 2), 0);
+      return 1 - (6 * sumD2) / (n * (n * n - 1));
+    }
+
+    function summarizeItems(items, matrix, irt) {
+      return items.map((item, j) => {
+        const scores = matrix.map((row) => row[j]).filter((value) => value !== null);
+        return {
+          item,
+          b: irt.b[j],
+          a: irt.a[j],
+          coverage: scores.length / matrix.length,
+          meanScore: mean(scores),
+        };
+      }).sort((x, y) => y.a - x.a);
+    }
+
+    function analyze(data) {
+      const modelRows = data.models.map((model, i) => {
+        const scores = data.matrix[i].filter((value) => value !== null);
+        return {
+          model,
+          avgScore: mean(scores),
+          reported: scores.length,
+          totalItems: data.items.length,
+        };
+      });
+      rankDescending(modelRows, "avgScore", "avgRank");
+
+      const irt = fitIRT(data.matrix);
+      modelRows.forEach((row, i) => {
+        row.theta = irt.theta[i];
+      });
+      rankDescending(modelRows, "theta", "irtRank");
+      modelRows.forEach((row) => {
+        row.rank = row.irtRank;
+        row.deltaRank = row.avgRank - row.irtRank;
+      });
+
+      const totalCells = data.models.length * data.items.length;
+      const observed = data.matrix.flat().filter((value) => value !== null).length;
+      const sparsity = (totalCells - observed) / totalCells;
+      const difficultyGap = Math.max(...irt.b) - Math.min(...irt.b);
+      const interaction = sparsity * difficultyGap;
+      const rhoEstimated = Math.max(0, 1 - (0.02 + 0.09 * sparsity + 0.01 * difficultyGap + 0.20 * interaction));
+      const rhoObserved = spearman(modelRows);
+      const risk = interaction < 0.5 ? "Low Risk" : interaction < 1.5 ? "Medium Risk" : "High Risk";
+
+      return {
+        rows: modelRows.sort((x, y) => x.irtRank - y.irtRank),
+        items: summarizeItems(data.items, data.matrix, irt),
+        diagnostics: { sparsity, difficultyGap, interaction, rhoEstimated, rhoObserved, risk },
+      };
+    }
+
+    function fmt(value, digits = 2) {
+      return Number.isFinite(value) ? value.toFixed(digits) : "NA";
+    }
+
+    function riskClasses(risk) {
+      if (risk === "Low Risk") return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      if (risk === "Medium Risk") return "bg-amber-100 text-amber-800 border-amber-200";
+      return "bg-red-100 text-red-800 border-red-200";
+    }
+
+    function renderDiagnostics(d) {
+      const el = document.getElementById("diagnostics");
+      el.innerHTML = `
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 class="text-xl font-semibold">Diagnostic Summary</h2>
+            <p class="mt-1 text-sm text-gray-600">EFSL-style warning signals for simple-average ranking reliability.</p>
+          </div>
+          <span class="inline-flex w-fit rounded-full border px-3 py-1 text-sm font-semibold ${riskClasses(d.risk)}">${d.risk}</span>
+        </div>
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          ${metric("Sparsity", `S = ${fmt(d.sparsity * 100, 1)}% missing cells`)}
+          ${metric("Difficulty Gap", `D = ${fmt(d.difficultyGap, 2)}`)}
+          ${metric("S × D interaction", fmt(d.interaction, 2))}
+          ${metric("Estimated ranking reliability under simple averaging", `ρ ≈ ${fmt(d.rhoEstimated, 2)}`)}
+          ${metric("Spearman ρ between rankings", fmt(d.rhoObserved, 2))}
+          ${metric("Risk Level", d.risk)}
+        </div>`;
+    }
+
+    function metric(label, value) {
+      return `<div class="rounded-lg border border-gray-200 bg-gray-50 p-3"><div class="text-xs font-semibold uppercase tracking-normal text-gray-500">${label}</div><div class="mt-2 text-lg font-semibold text-gray-900">${value}</div></div>`;
+    }
+
+    function renderRankingTable() {
+      const body = document.getElementById("rankingBody");
+      const rows = [...state.rows].sort((a, b) => {
+        const x = a[state.sortKey];
+        const y = b[state.sortKey];
+        if (typeof x === "string") return state.sortDir * x.localeCompare(y);
+        return state.sortDir * (x - y);
+      });
+      body.innerHTML = rows.map((row) => {
+        const highlight = Math.abs(row.deltaRank) > 2 ? "bg-red-50" : "";
+        return `<tr class="${highlight}">
+          <td class="px-3 py-3 font-semibold">${row.rank}</td>
+          <td class="px-3 py-3">${escapeHtml(row.model)} <span class="text-xs text-gray-500">(${row.reported}/${row.totalItems})</span></td>
+          <td class="px-3 py-3">${fmt(row.avgScore, 3)}</td>
+          <td class="px-3 py-3">${row.avgRank}</td>
+          <td class="px-3 py-3 text-emerald-700">${fmt(row.theta, 2)}</td>
+          <td class="px-3 py-3 font-semibold text-emerald-700">${row.irtRank}</td>
+          <td class="px-3 py-3 ${Math.abs(row.deltaRank) > 2 ? "font-semibold text-red-700" : "text-gray-700"}">${row.deltaRank > 0 ? "+" : ""}${row.deltaRank}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderItemTable(items) {
+      const body = document.getElementById("itemBody");
+      body.innerHTML = items.map((item) => `<tr>
+        <td class="px-3 py-3 font-medium">${escapeHtml(item.item)}</td>
+        <td class="px-3 py-3">${fmt(item.b, 2)}</td>
+        <td class="px-3 py-3 text-emerald-700">${fmt(item.a, 2)}</td>
+        <td class="px-3 py-3">${fmt(item.coverage * 100, 0)}%</td>
+        <td class="px-3 py-3">${fmt(item.meanScore, 3)}</td>
+      </tr>`).join("");
+    }
+
+    function renderScatter(rows) {
+      const size = 420;
+      const pad = 52;
+      const plot = size - pad * 2;
+      const n = rows.length;
+      const maxReported = Math.max(...rows.map((row) => row.reported));
+      const minReported = Math.min(...rows.map((row) => row.reported));
+      const scale = (rank) => pad + ((rank - 1) / Math.max(1, n - 1)) * plot;
+      const divergent = [...rows].sort((a, b) => Math.abs(b.deltaRank) - Math.abs(a.deltaRank)).slice(0, Math.min(3, rows.length));
+      const divergentModels = new Set(divergent.filter((row) => Math.abs(row.deltaRank) > 0).map((row) => row.model));
+      const ticks = rows.map((_, index) => index + 1).filter((rank) => rank === 1 || rank === n || rank % Math.ceil(n / 5) === 0);
+
+      const tickMarkup = ticks.map((rank) => {
+        const p = scale(rank);
+        return `<g>
+          <line x1="${p}" x2="${p}" y1="${pad}" y2="${size - pad}" stroke="#e5e7eb"/>
+          <line x1="${pad}" x2="${size - pad}" y1="${p}" y2="${p}" stroke="#e5e7eb"/>
+          <text x="${p}" y="${size - 18}" text-anchor="middle" font-size="11" fill="#6b7280">${rank}</text>
+          <text x="24" y="${p + 4}" text-anchor="middle" font-size="11" fill="#6b7280">${rank}</text>
+        </g>`;
+      }).join("");
+
+      const points = rows.map((row) => {
+        const x = scale(row.avgRank);
+        const y = scale(row.irtRank);
+        const darkness = maxReported === minReported ? 0.75 : 0.35 + 0.55 * ((row.reported - minReported) / (maxReported - minReported));
+        const color = `rgba(5, 150, 105, ${darkness})`;
+        const label = divergentModels.has(row.model)
+          ? `<text class="scatter-label" x="${Math.min(size - 70, x + 10)}" y="${Math.max(18, y - 10)}" font-size="12" fill="#111827">${escapeHtml(row.model)}</text>`
+          : "";
+        return `<g>
+          <circle cx="${x}" cy="${y}" r="7" fill="${color}" stroke="#064e3b" stroke-width="1.5"/>
+          ${label}
+        </g>`;
+      }).join("");
+
+      document.getElementById("scatterPlot").innerHTML = `
+        <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Average Rank vs IRT Rank scatter plot" class="h-auto w-full min-w-[320px] max-w-[520px]">
+          <rect x="0" y="0" width="${size}" height="${size}" fill="#ffffff"/>
+          ${tickMarkup}
+          <line x1="${pad}" y1="${pad}" x2="${size - pad}" y2="${size - pad}" stroke="#d97706" stroke-width="2" stroke-dasharray="6 5"/>
+          <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${size - pad}" stroke="#374151" stroke-width="1.5"/>
+          <line x1="${pad}" y1="${size - pad}" x2="${size - pad}" y2="${size - pad}" stroke="#374151" stroke-width="1.5"/>
+          ${points}
+          <text x="${size / 2}" y="${size - 4}" text-anchor="middle" font-size="12" font-weight="600" fill="#374151">Average Rank</text>
+          <text x="14" y="${size / 2}" text-anchor="middle" font-size="12" font-weight="600" fill="#374151" transform="rotate(-90 14 ${size / 2})">IRT Rank</text>
+        </svg>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      }[char]));
+    }
+
+    function showError(message) {
+      const errorBox = document.getElementById("errorBox");
+      errorBox.textContent = message;
+      errorBox.classList.remove("hidden");
+      document.getElementById("results").classList.add("hidden");
+    }
+
+    function clearError() {
+      const errorBox = document.getElementById("errorBox");
+      errorBox.textContent = "";
+      errorBox.classList.add("hidden");
+    }
+
+    function runAnalysis() {
+      clearError();
+      try {
+        const data = parseMatrix(document.getElementById("matrixInput").value);
+        const result = analyze(data);
+        state.rows = result.rows;
+        state.sortKey = "irtRank";
+        state.sortDir = 1;
+        renderDiagnostics(result.diagnostics);
+        renderRankingTable();
+        renderScatter(result.rows);
+        renderItemTable(result.items);
+        document.getElementById("results").classList.remove("hidden");
+      } catch (error) {
+        showError(error.message || "Unable to analyze this matrix.");
+      }
+    }
+
+    document.getElementById("loadExample").addEventListener("click", () => {
+      document.getElementById("matrixInput").value = EXAMPLE_DATA;
+      clearError();
+      document.getElementById("matrixInput").focus();
+    });
+
+    document.getElementById("runAnalysis").addEventListener("click", runAnalysis);
+    document.getElementById("clearInput").addEventListener("click", () => {
+      document.getElementById("matrixInput").value = "";
+      clearError();
+      document.getElementById("results").classList.add("hidden");
+    });
+
+    document.querySelectorAll("th[data-sort]").forEach((header) => {
+      header.addEventListener("click", () => {
+        const key = header.getAttribute("data-sort");
+        if (state.sortKey === key) {
+          state.sortDir *= -1;
+        } else {
+          state.sortKey = key;
+          state.sortDir = key === "model" ? 1 : -1;
+          if (key === "rank" || key === "avgRank" || key === "irtRank") state.sortDir = 1;
+        }
+        renderRankingTable();
+      });
+    });
+
+    document.getElementById("matrixInput").value = "";
+  </script>
+</body>
+</html>
