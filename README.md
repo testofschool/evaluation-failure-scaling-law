@@ -8,6 +8,11 @@ Jung Min Kang · Independent Researcher · Seoul, South Korea
 [![Try Calculator](https://img.shields.io/badge/Try_Calculator-Online-059669.svg)](https://testofschool.github.io/evaluation-failure-scaling-law)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 
+> **Before you reproduce:** this repository releases the grid sweep only, two estimation
+> details are described differently in the paper than they are implemented here, and the
+> declared dependency list is incomplete. All four differences are documented in
+> **[KNOWN_DISCREPANCIES.md](KNOWN_DISCREPANCIES.md)**.
+
 ---
 
 ## What This Paper Does
@@ -43,38 +48,62 @@ Through controlled simulations across four domains (NLP, clinical trials, autono
 
 ## Reproduction
 
+This repository reproduces the **150-condition grid sweep** (§5.3 and Figure 1). The
+four-domain experiments in §5.1–5.2 are not included here — see
+[KNOWN_DISCREPANCIES.md](KNOWN_DISCREPANCIES.md), D-3.
+
 ### Requirements
 
+`requirements.txt` is the canonical dependency list — install from it rather than naming
+packages by hand:
+
 ```bash
-pip install numpy scipy matplotlib
+pip install -r requirements.txt
 ```
 
-### Run All Experiments
+### Run the Grid Sweep
 
 ```bash
-# Four-domain simulation (< 60 seconds)
 python src/grid_sweep_final.py
 ```
 
-This regenerates the experiment outputs and analysis figures:
-- `outputs/grid_summary.csv` — per-cell mean/std
-- `outputs/grid_raw_runs.csv` — per-seed raw results
-- `outputs/regression_report.txt` — statistical analysis
-- `figures/figure2_composite.png` — paper Figure 2
+**Measured runtime: 78.5 s end-to-end** (median of 3 consecutive runs; 78.0 s / 78.5 s /
+78.6 s), of which 75.7 s is the 150-cell × 15-seed sweep and the remainder is figure
+rendering and the regression report. Measurement environment: high-end laptop CPU
+(Apple M1 Max), macOS 26.5.2, Python 3.10.11, NumPy 2.2.6, SciPy 1.15.3, matplotlib 3.10.8.
+The paper quotes ≈3 minutes for this sweep on a standard laptop CPU; the machine above is the
+same class of hardware at a higher specification, so the two figures are consistent.
 
-### Increase Seeds for Paper-Grade Results
+All six generated files are written to `outputs/`:
 
-Edit `N_SEEDS` in `src/grid_sweep_final.py`:
+| File | Contents |
+|------|----------|
+| `outputs/grid_summary.csv` | Per-cell mean / std / MCSE over seeds (150 rows) |
+| `outputs/grid_raw_runs.csv` | Per-seed raw ρ and top-1 misrank flags |
+| `outputs/regression_report.txt` | Interaction regression + power-law fit |
+| `outputs/figure2_composite.png` | **paper Figure 1** — clean 4-panel composite |
+| `outputs/figure2_composite_annotated.png` | Same four panels with per-cell values printed |
+| `outputs/scaling_fit.png` | S×D vs. ranking error scatter with power-law fit |
 
-```python
-N_SEEDS = 30  # or 50 for stronger confidence
-```
+The filename `figure2_composite.png` is historical: it is the file `paper/main.tex` includes,
+so it is **not** renamed even though the figure is numbered 1 in the paper. The committed
+copies live at `figures/figure2_composite.png` and `paper/figures/figure2_composite.png`.
+
+### Seed Count
+
+`N_SEEDS = 15` in `src/grid_sweep_final.py` is the exact setting used in the paper —
+150 cells × 15 seeds = 2,250 replications per missingness condition. Leave it unchanged to
+reproduce the published numbers: with it, `grid_summary.csv`, `grid_raw_runs.csv` and
+`regression_report.txt` regenerate byte-identically to the committed copies (verified
+2026-08-05 on the environment above). Changing `N_SEEDS` changes the Monte-Carlo standard
+errors and will not reproduce the reported values.
 
 ## Repository Structure
 
 ```
 evaluation-failure-scaling-law/
 ├── README.md
+├── KNOWN_DISCREPANCIES.md      # arXiv v1 ↔ this repository
 ├── LICENSE
 ├── CITATION.cff
 ├── requirements.txt
@@ -84,14 +113,21 @@ evaluation-failure-scaling-law/
 │   └── figures/
 │       └── figure2_composite.png
 ├── src/
-│   └── grid_sweep_final.py
+│   ├── grid_sweep_final.py     # 150-condition grid sweep (§5.3, Figure 1)
+│   └── EvalFailureLab.jsx      # interactive calculator component
+├── docs/
+│   └── index.html              # GitHub Pages calculator
 ├── figures/
-│   └── figure2_composite.png
+│   └── figure2_composite.png   # committed copy of paper Figure 1
 └── outputs/
     ├── grid_summary.csv
     ├── grid_raw_runs.csv
     └── regression_report.txt
 ```
+
+Running the sweep additionally writes `figure2_composite.png`,
+`figure2_composite_annotated.png` and `scaling_fit.png` into `outputs/`; those three are
+regenerated artifacts and are not committed.
 
 ## Citation
 
