@@ -22,7 +22,7 @@ We show that **simple averaging** — the default method for ranking systems on 
 1. The evaluation matrix is **sparse** (not every system is tested on every item)
 2. Items vary substantially in **difficulty**
 
-Through controlled simulations across four domains (NLP, clinical trials, autonomous vehicle safety, cybersecurity) and a **150-condition grid sweep**, we map the **Evaluation Failure Surface**: ranking error increases as a function of Sparsity × Difficulty Gap, while **IRT-based estimation remains robust** (ρ ≥ 0.993 across all conditions).
+Through controlled simulations across four domains (NLP, clinical trials, autonomous vehicle safety, cybersecurity) and a **150-condition grid sweep**, we map the **Evaluation Failure Surface**: ranking error increases as a function of Sparsity × Difficulty Gap, while **IRT-based estimation remains robust** on that synthetic grid (minimum cell-mean ρ = 0.993, rounded, under difficulty-biased missingness; see scope note under Key Results).
 
 <p align="center">
   <img src="figures/figure2_composite.png" width="800" alt="Evaluation Failure Surface"/>
@@ -41,10 +41,20 @@ Through controlled simulations across four domains (NLP, clinical trials, autono
 |--------|-------|
 | Worst ρ (simple avg, biased missingness) | 0.242 |
 | Worst ρ (simple avg, MCAR) | 0.770 |
-| Min ρ (IRT, all conditions) | **0.993** |
+| Min cell-mean ρ (IRT, biased missingness, synthetic 2PL grid) | **0.993** (0.9927, rounded) |
+| Min single-seed ρ (IRT, same grid) | 0.9515 (73 of 2,250 runs < 0.993) |
 | S×D interaction coefficient | γ₃ = +0.199, t = 13.05 |
 | Interaction model R² | 0.777 |
 | Grid conditions tested | 150 (15 S × 10 D) |
+
+**Scope of the IRT figures.** They come from `outputs/grid_summary.csv` (column
+`rho_irt_biased_mean`, 150 cells × 15 seeds) and `outputs/grid_raw_runs.csv` (method `irt`,
+2,250 runs). IRT is fitted only under difficulty-biased missingness — the MCAR arm runs simple
+averaging only. The 10 cells with S = 0 do not fit IRT at all: ρ = 1.0 is assigned directly
+(`src/grid_sweep_final.py:157-162`). Two cells have an unrounded mean below 0.993
+(S = 0.70, D = 2.5 and D = 4.0, both 0.9927). The result is from one synthetic setting
+(J = 10, I = 10, K = 100); it is not a claim about real benchmarks or other missingness
+mechanisms. See [KNOWN_DISCREPANCIES.md](KNOWN_DISCREPANCIES.md), D-5.
 
 ## Reproduction
 
